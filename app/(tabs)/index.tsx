@@ -5,32 +5,40 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  Alert,
   ScrollView,
   TextInput,
+  FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Search, Navigation, MapPin } from 'lucide-react-native';
-import { mandalData } from '@/data/mandalData';
+import { Search, Navigation } from 'lucide-react-native';
+import { mandalData, Mandal} from '@/data/mandalData';
 import { getDirections } from '@/utils/mapUtils';
-import Map from '@/components/Map';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const { width, height } = Dimensions.get('window');
-
 
 export default function MapScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const [selectedMandal, setSelectedMandal] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filteredMandals, setFilteredMandals] = useState<Mandal[]>([]);
+  const [noMatchesError, setNoMatchesError] = useState(false);
 
-  const filteredMandals = mandalData.filter(
-    (mandal) =>
-      mandal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      mandal.area.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const result = mandalData.filter(
+        (mandal) =>
+          mandal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          mandal.area.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      if (result.length === 0) {
+        setNoMatchesError(true);
+        setFilteredMandals([]);
+      } else {
+        setNoMatchesError(false)
+        setFilteredMandals(result);
+      }
+    } else {
+      setFilteredMandals([]);
+    }
+  }, [searchQuery])
   const handleMandalPress = (mandal: any) => {
     setSelectedMandal(mandal);
   };
@@ -68,36 +76,50 @@ export default function MapScreen() {
           value={searchQuery}
         />
       </View>
+      {noMatchesError && (
+        <Text style={styles.noMatchesError}>No mandals found</Text>
+      )}
 
-      {/* Map Placeholder */}
-      <View style={styles.mapContainer}>
-        <View style={styles.mapPlaceholder}>
-          <MapPin size={48} color="#FF8C42" />
-          <Map />
-          <Text style={styles.mapText}>Interactive Map View</Text>
-          <Text style={styles.mapSubtext}>
-            {mandalData.length} Mandals Available
-          </Text>
-        </View>
-
-        {/* Map Markers Simulation */}
-        <View style={styles.markersContainer}>
-          {mandalData.slice(0, 6).map((mandal, index) => (
+      {/* Mandal List */}
+      <View>
+        <FlatList
+          data={filteredMandals}
+          renderItem={({ item }: any) => (
             <TouchableOpacity
-              key={mandal.id}
-              style={[
-                styles.marker,
-                {
-                  top: 100 + ((index * 30) % 200),
-                  left: 50 + ((index * 50) % 250),
-                },
-              ]}
-              onPress={() => handleMandalPress(mandal)}
+              onPress={() => handleMandalPress(item)}
+              style={styles.selectedMandalContainer}
             >
-              <Text style={styles.markerText}>📍</Text>
+              <View style={styles.selectedMandalInfo}>
+                <Text style={styles.selectedMandalName}>{item.name}</Text>
+                <Text style={styles.selectedMandalArea}>{item.area}</Text>
+                <Text style={styles.selectedMandalDistance}>
+                  📍 {item.distance} • Est. {item.visitingHours}
+                </Text>
+              </View>
+              <View style={styles.selectedMandalActions}>
+                <TouchableOpacity
+                  style={styles.directionsButton}
+                  onPress={() => {
+                    setSelectedMandal(item);
+                    handleGetDirections();
+                  }}
+                >
+                  <Navigation size={20} color="#FFFFFF" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.detailsButton}
+                  onPress={() => {
+                    setSelectedMandal(item);
+                    handleMandalDetails();
+                  }}
+                >
+                  <Text style={styles.detailsButtonText}>Details</Text>
+                </TouchableOpacity>
+              </View>
             </TouchableOpacity>
-          ))}
-        </View>
+          )}
+          keyExtractor={(item: any) => item.id.toString()}
+        />
       </View>
 
       {/* Selected Mandal Info */}
@@ -130,7 +152,7 @@ export default function MapScreen() {
       {/* Quick Stats */}
       <ScrollView
         horizontal
-        style={styles.statsContainer}
+        style={{...styles.statsContainer, paddingLeft: 20}}
         showsHorizontalScrollIndicator={false}
       >
         <View style={styles.statCard}>
@@ -145,7 +167,7 @@ export default function MapScreen() {
           <Text style={styles.statNumber}>2.5km</Text>
           <Text style={styles.statLabel}>Avg Distance</Text>
         </View>
-        <View style={styles.statCard}>
+        <View style={styles.statCard }>
           <Text style={styles.statNumber}>Live</Text>
           <Text style={styles.statLabel}>Updates</Text>
         </View>
@@ -196,6 +218,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     // outline: "none
+  },
+  noMatchesError: {
+    fontSize: 14,
+    color: 'red',
+    marginTop: 10,
+    textAlign: 'center',
   },
   mapContainer: {
     flex: 1,
@@ -300,15 +328,18 @@ const styles = StyleSheet.create({
   statsContainer: {
     paddingHorizontal: 20,
     paddingVertical: 15,
+    maxHeight: 200,
+    minWidth: 300,
+    
   },
   statCard: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderRadius: 12,
-    marginRight: 15,
+    margin: 4,
     alignItems: 'center',
-    minWidth: 80,
+    minWidth: 100,
     borderWidth: 1,
     borderColor: '#FFD700',
   },

@@ -1,3 +1,19 @@
+export interface Mandal {
+  id: string;
+  name: string;
+  area: string;
+  address: string;
+  coordinates: { latitude: number; longitude: number };
+  establishedYear: number;
+  specialFeatures: string[];
+  distance: string;
+  visitingHours: string;
+  crowdLevel: string;
+  contactInfo: { phone?: string };
+  lastUpdated: string;
+  category: string;
+}
+
 export const mandalData = [
   // The Big Five (Most Famous)
   {
