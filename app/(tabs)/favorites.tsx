@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -12,18 +12,25 @@ import { useRouter } from 'expo-router';
 import { Heart, MapPin, Navigation, Trash2 } from 'lucide-react-native';
 import { mandalData } from '@/data/mandalData';
 import { openGoogleMaps, getDirections } from '@/utils/mapUtils';
+import { useFavourites,  } from '@/context/favouriteContext';
+
 
 export default function FavoritesScreen() {
   const router = useRouter();
-  const [favorites, setFavorites] = useState<string[]>([
-    '1', '5', '12', '18' // Sample favorite IDs
-  ]);
+  const {favourites, toggleFavourite} = useFavourites();
+  const [favouriteMandals, setFavouriteMandals] = useState<any[]>([]);
+
+  console.log("favouriteMandals", favouriteMandals)
+  console.log("favoritecontext", favourites)
+  useEffect(() => {
+    setFavouriteMandals(favourites);
+  }, [favourites]);
 
   const favoriteMandals = mandalData.filter(mandal => 
-    favorites.includes(mandal.id)
+    favourites.includes(mandal.id)
   );
 
-  const removeFavorite = (mandalId: string) => {
+  const removeFavorite = (mandalId: any) => {
     Alert.alert(
       'Remove Favorite',
       'Are you sure you want to remove this mandal from favorites?',
@@ -33,7 +40,7 @@ export default function FavoritesScreen() {
           text: 'Remove', 
           style: 'destructive',
           onPress: () => {
-            setFavorites(prev => prev.filter(id => id !== mandalId));
+           toggleFavourite(mandalId);
           }
         },
       ]
@@ -83,7 +90,7 @@ export default function FavoritesScreen() {
         {item.specialFeatures.length > 0 && (
           <View style={styles.featuresContainer}>
             <Text style={styles.featuresTitle}>Special Features:</Text>
-            {item.specialFeatures.slice(0, 2).map((feature, index) => (
+            {item.specialFeatures.slice(0, 2).map((feature: any, index:any) => (
               <View key={index} style={styles.featureTag}>
                 <Text style={styles.featureText}>{feature}</Text>
               </View>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,7 @@ import {
 } from 'lucide-react-native';
 import { mandalData } from '@/data/mandalData';
 import { openGoogleMaps, getDirections } from '@/utils/mapUtils';
+import { useFavourites,  } from '@/context/favouriteContext';
 
 const { width } = Dimensions.get('window');
 
@@ -31,8 +32,16 @@ export default function MandalDetailsScreen() {
   const router = useRouter();
   const { mandalId } = useLocalSearchParams();
   const [isFavorite, setIsFavorite] = useState(false);
-
+  const {favourites, toggleFavourite} = useFavourites();
   const mandal = mandalData.find(m => m.id === mandalId);
+
+  useEffect(() => {
+    if (favourites.includes(mandalId as string)) {
+      setIsFavorite(true);
+    } else {
+      setIsFavorite(false);
+    }
+  }, [favourites, mandalId]);
 
   if (!mandal) {
     return (
@@ -70,7 +79,8 @@ export default function MandalDetailsScreen() {
   };
 
   const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
+    toggleFavourite(mandal.id as string);
+    
     Alert.alert(
       'Favorites',
       isFavorite 
